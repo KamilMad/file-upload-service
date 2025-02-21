@@ -1,0 +1,17 @@
+[33mcommit d7e1928f0aa43df5012924ddb437854f4b0df8d9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: KamilMad <kamilul085@gmail.com>
+Date:   Mon Feb 17 15:16:07 2025 +0100
+
+    Add: aws s3 dependency
+
+[33mcommit f03fee2186f962fdbcb2c42e6a9ad683f21c8443[m
+Author: KamilMad <kamilul085@gmail.com>
+Date:   Mon Feb 17 15:15:22 2025 +0100
+
+    Initial commit
+
+[33mcommit b8b6be33d4b0a029c2f4d5ea9755878b633ab84f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Kamilmad <68123611+KamilMad@users.noreply.github.com>
+Date:   Mon Feb 17 15:04:43 2025 +0100
+
+    Initial commit
