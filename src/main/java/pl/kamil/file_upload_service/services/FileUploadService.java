@@ -38,7 +38,6 @@ public class FileUploadService {
         try {
             // upload the file to the specific S3 bucket
             s3Client.putObject(new PutObjectRequest("bucket", filename, file.getInputStream(), metadata));
-
             // Return the file URL from S3 bucket
             return s3Client.getUrl("bucket", filename).toString();
         } catch (AmazonServiceException e) {
