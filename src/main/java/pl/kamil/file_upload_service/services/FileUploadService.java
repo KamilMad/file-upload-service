@@ -18,15 +18,14 @@ public class FileUploadService {
 
     private final AmazonS3 s3Client;
 
+    private final static String bucket = "my-upload-file-bucket-085";
+
     public FileUploadService(AmazonS3 s3Client) {
-        this.s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.EU_CENTRAL_1)
-                .build();
+        this.s3Client = s3Client;
     }
 
-    /*
-    return: file url
-     */
+
+    // return: file url
     public String uploadFile(MultipartFile file) {
         //prevent filename collisions
         String filename = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
@@ -37,9 +36,9 @@ public class FileUploadService {
 
         try {
             // upload the file to the specific S3 bucket
-            s3Client.putObject(new PutObjectRequest("bucket", filename, file.getInputStream(), metadata));
+            s3Client.putObject(new PutObjectRequest(bucket, filename, file.getInputStream(), metadata));
             // Return the file URL from S3 bucket
-            return s3Client.getUrl("bucket", filename).toString();
+            return s3Client.getUrl(bucket, filename).toString();
         } catch (AmazonServiceException e) {
             throw new RuntimeException("Error uploading file to S3: " + e.getMessage(), e);
         } catch (SdkClientException e) {
