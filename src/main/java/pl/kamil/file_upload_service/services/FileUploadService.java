@@ -2,16 +2,17 @@ package pl.kamil.file_upload_service.services;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import pl.kamil.file_upload_service.exceptions.FileNotFoundException;
+import pl.kamil.file_upload_service.exceptions.S3StorageException;
+import pl.kamil.file_upload_service.exceptions.StorageServiceException;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.AccessDeniedException;
 import java.util.UUID;
 
 @Service
@@ -53,14 +54,27 @@ public class FileUploadService {
 
     public S3Object getFile(String fileKey) {
         try {
-            // Get the object from the S3 bucket using the key (file name)
+            // Attempt to retrieve the file from S3
             return s3Client.getObject(new GetObjectRequest(bucket, fileKey));
+
         } catch (AmazonS3Exception e) {
-            if (e.getStatusCode() == 404) {
+            final int statusCode = e.getStatusCode();
+
+            //Log the error
+            System.err.println("S3 error [" + statusCode + "]: " +e.getErrorMessage() );
+
+            // Handle different types of S3 errors explicitly
+            if (statusCode == 404) {
                 throw new FileNotFoundException("File not found: " + fileKey);
+            } else if (statusCode == 403) {
+                throw new S3StorageException("Access denied to file: " + fileKey, e);
             }
+
+            // If it's not 404 or 403, treat it as a general S3 storage error
             throw new S3StorageException("S3 error retrieving file: " + fileKey, e);
+
         } catch (SdkClientException e) {
+            // Handle client-side errors
             throw new StorageServiceException("AWS SDK client error", e);
         }
 
