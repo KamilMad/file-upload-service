@@ -67,6 +67,12 @@
 			<version>1.12.271</version> <!-- Use the latest version -->
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
