@@ -3,6 +3,7 @@ package pl.kamil.file_upload_service.services;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,6 @@ import pl.kamil.file_upload_service.exceptions.S3StorageException;
 import pl.kamil.file_upload_service.exceptions.StorageServiceException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.UUID;
 
 @Service
@@ -92,5 +92,26 @@ public class FileUploadService {
             throw new StorageServiceException("AWS SDK client error", e);
         }
 
+    }
+
+    public void deleteByKey(String key) {
+        try {
+            if (s3Client.doesObjectExist(bucket, key)) {
+                s3Client.deleteObject(bucket, key);
+            }
+        } catch (AmazonServiceException e) {
+            int statusCode = e.getStatusCode();
+
+            System.err.println("S3 error [" + statusCode + "] while deleting: " + e.getErrorMessage());
+
+            if (statusCode == 403) {
+                throw new S3StorageException("Access denied when deleting file: " + key, e);
+            } else if (statusCode == 404) {
+                // You might skip this, since S3 treats deletes as success even if not found
+                throw new FileNotFoundException("File not found for deletion: " + key);
+            }
+        } catch (SdkClientException e) {
+            throw new S3StorageException("AWS SDK client error while deleting file: " + key, e);
+        }
     }
 }
