@@ -39,4 +39,11 @@ public class FileUploadController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileKey + "\"")
                     .body(response.inputStreamResource());
     }
+
+    @DeleteMapping("/{key}")
+    public ResponseEntity<String> deleteFileByKey(@PathVariable String key) {
+        fileUploadService.deleteByKey(key);
+
+        return ResponseEntity.status(HttpStatus.OK).body("Deleted file");
+    }
 }
