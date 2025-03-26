@@ -25,18 +25,17 @@ public class FileUploadController {
     @PostMapping
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         String fileUrl = fileUploadService.uploadFile(file);
-        return ResponseEntity.status(HttpStatus.OK).body(fileUrl);
+        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
     }
 
-
-    @GetMapping("/{fileKey}")
-    public ResponseEntity<InputStreamResource> getFileById(@PathVariable String fileKey) {
-            S3FileResponse response = fileUploadService.getFileResource(fileKey);
+    @GetMapping("/{key}")
+    public ResponseEntity<InputStreamResource> getFileById(@PathVariable String key) {
+            S3FileResponse response = fileUploadService.getFileResource(key);
             // Return the byte array as the response body
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .header(HttpHeaders.CONTENT_TYPE, response.contentType())
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileKey + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + key + "\"")
                     .body(response.inputStreamResource());
     }
 

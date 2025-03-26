@@ -11,10 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import pl.kamil.file_upload_service.dtos.S3FileResponse;
-import pl.kamil.file_upload_service.exceptions.FileNotFoundException;
-import pl.kamil.file_upload_service.exceptions.FileProcessingException;
-import pl.kamil.file_upload_service.exceptions.S3StorageException;
-import pl.kamil.file_upload_service.exceptions.StorageServiceException;
 
 import java.io.IOException;
 import java.io.InputStream;
