@@ -9,10 +9,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<String> handleFileNotFoundException(FileNotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
 
     @ExceptionHandler(S3StorageException.class)
     public ResponseEntity<String> handleS3StorageException(S3StorageException e) {

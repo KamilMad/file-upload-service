@@ -4,11 +4,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pl.kamil.file_upload_service.dtos.FileMetadataResponse;
 import pl.kamil.file_upload_service.dtos.S3FileResponse;
+import pl.kamil.file_upload_service.models.FileMetadata;
 import pl.kamil.file_upload_service.services.FileUploadService;
+
+import javax.print.attribute.standard.Media;
 
 
 @RestController
@@ -22,10 +27,20 @@ public class FileUploadController {
         this.fileUploadService = fileUploadService;
     }
 
-    @PostMapping
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-        String fileUrl = fileUploadService.uploadFile(file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
+//    @PostMapping
+//    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+//        String fileUrl = fileUploadService.uploadFile(file);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
+//    }
+    // This endpoint only accepts requests with Content-Type: multipart/form-data — like HTML forms or file uploads
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FileMetadataResponse> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("lessonId") Long lessonId,
+            @RequestParam("userId") Long userId) {
+
+        FileMetadataResponse result = fileUploadService.UploadFileWithMetadata(file, lessonId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @GetMapping("/{key}")
