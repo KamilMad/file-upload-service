@@ -60,4 +60,5 @@ public class FileUploadController {
 
         return ResponseEntity.status(HttpStatus.OK).body("Deleted file");
     }
+
 }
