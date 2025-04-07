@@ -51,8 +51,6 @@ public class FileUploadService {
             //return s3Client.getUrl(bucket, s3key).toString();
             return s3key;
 
-
-
         } catch (AmazonS3Exception e) { // Covers all AWS service errors
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 service error: " + e.getErrorMessage(), e);
         } catch (SdkClientException e) { // Covers network issues and misconfigured clients
@@ -94,7 +92,9 @@ public class FileUploadService {
     public S3Object getFile(String fileKey) {
         try {
             // Attempt to retrieve the file from S3
-            return s3Client.getObject(new GetObjectRequest(bucket, fileKey));
+
+            GetObjectRequest getObjectRequest = new GetObjectRequest(bucket, fileKey);
+            return s3Client.getObject(getObjectRequest);
 
         } catch (AmazonServiceException e) {
             final int statusCode = e.getStatusCode();
