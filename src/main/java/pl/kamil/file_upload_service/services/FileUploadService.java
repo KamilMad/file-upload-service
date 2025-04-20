@@ -99,7 +99,6 @@ public class FileUploadService {
         } catch (AmazonServiceException e) {
             final int statusCode = e.getStatusCode();
 
-            //Log the error
             System.err.println("S3 error [" + statusCode + "]: " +e.getErrorMessage() );
 
             switch (statusCode) {

@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pl.kamil.file_upload_service.dtos.ApiResponse;
 import pl.kamil.file_upload_service.dtos.FileMetadataResponse;
 import pl.kamil.file_upload_service.dtos.S3FileResponse;
 import pl.kamil.file_upload_service.models.FileMetadata;
@@ -27,11 +28,6 @@ public class FileUploadController {
         this.fileUploadService = fileUploadService;
     }
 
-//    @PostMapping
-//    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-//        String fileUrl = fileUploadService.uploadFile(file);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
-//    }
     // This endpoint only accepts requests with Content-Type: multipart/form-data — like HTML forms or file uploads
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FileMetadataResponse> uploadFile(
@@ -46,7 +42,7 @@ public class FileUploadController {
     @GetMapping("/{key}")
     public ResponseEntity<InputStreamResource> getFileById(@PathVariable String key) {
             S3FileResponse response = fileUploadService.getFileResource(key);
-            // Return the byte array as the response body
+
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .header(HttpHeaders.CONTENT_TYPE, response.contentType())
@@ -55,10 +51,10 @@ public class FileUploadController {
     }
 
     @DeleteMapping("/{key}")
-    public ResponseEntity<String> deleteFileByKey(@PathVariable String key) {
+    public ResponseEntity<ApiResponse> deleteFileByKey(@PathVariable String key) {
         fileUploadService.deleteByKey(key);
 
-        return ResponseEntity.status(HttpStatus.OK).body("Deleted file");
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse("File deleted successfully"));
     }
 
 }
