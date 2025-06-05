@@ -42,7 +42,7 @@ public class FileUploadService {
         metadata.setContentType(file.getContentType());
         metadata.setContentLength(file.getSize());  // Set the file size in metadata
 
-        try(InputStream inputStream = file.getInputStream()) {
+        try (InputStream inputStream = file.getInputStream()) {
             // Upload the file to the specific S3 bucket
             PutObjectRequest request = new PutObjectRequest(bucket, s3key, inputStream, metadata);
             s3Client.putObject(request);
@@ -61,11 +61,11 @@ public class FileUploadService {
 
     }
 
-    public FileMetadataResponse UploadFileWithMetadata(MultipartFile file, Long lessonId, Long userId) {
+    public FileMetadataResponse uploadFileWithMetadata(MultipartFile file, Long lessonId, Long userId) {
         // It returns url but should return s3 key
         String s3Key = uploadFile(file);
 
-        FileMetadata fileMetadata =  createFileMetadata(file, s3Key, lessonId, userId);
+        FileMetadata fileMetadata = createFileMetadata(file, s3Key, lessonId, userId);
         fileMetadataRepository.save(fileMetadata);
 
         return mapFileMetadataToFileMetadataResponse(fileMetadata);
@@ -81,6 +81,7 @@ public class FileUploadService {
         fileMetadata.setLessonId(lessonId);
         return fileMetadata;
     }
+
     public S3FileResponse getFileResource(String fileKey) {
         S3Object s3Object = getFile(fileKey);
         InputStreamResource resource = new InputStreamResource(s3Object.getObjectContent());
@@ -99,13 +100,15 @@ public class FileUploadService {
         } catch (AmazonServiceException e) {
             final int statusCode = e.getStatusCode();
 
-            System.err.println("S3 error [" + statusCode + "]: " +e.getErrorMessage() );
+            System.err.println("S3 error [" + statusCode + "]: " + e.getErrorMessage());
 
             switch (statusCode) {
                 case 404 -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + fileKey);
-                case 403 -> throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to file: " + fileKey, e);
+                case 403 ->
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to file: " + fileKey, e);
                 // If it's not 404 or 403, treat it as a general S3 storage error
-                default -> throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 error: " + e.getErrorMessage(), e);
+                default ->
+                        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 error: " + e.getErrorMessage(), e);
             }
 
         } catch (SdkClientException e) {
@@ -133,16 +136,17 @@ public class FileUploadService {
         }
     }
 
-    public String getFileUrl(String s3Key) {
-        return s3Client.getUrl(bucket, s3Key).toString();
+    public FileMetadataResponse mapFileMetadataToFileMetadataResponse(FileMetadata fileMetadata) {
+        String s3Key = getFileUrl(fileMetadata.getS3Key());
+
+        return new FileMetadataResponse(fileMetadata.getId(),
+                fileMetadata.getOriginalName(),
+                fileMetadata.getContentType(),
+                fileMetadata.getSize(),
+                s3Key);
     }
 
-    public FileMetadataResponse mapFileMetadataToFileMetadataResponse(FileMetadata fileMetadata) {
-        String s3Key =  getFileUrl(fileMetadata.getS3Key());
-        return new FileMetadataResponse(fileMetadata.getId(),
-                        fileMetadata.getOriginalName(),
-                        fileMetadata.getContentType(),
-                        fileMetadata.getSize(),
-                        s3Key);
+    public String getFileUrl(String s3Key) {
+        return s3Client.getUrl(bucket, s3Key).toString();
     }
 }

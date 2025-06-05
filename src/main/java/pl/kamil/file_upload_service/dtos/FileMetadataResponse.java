@@ -6,4 +6,5 @@ public record FileMetadataResponse(
         String contentType,
         long size,
         String url
-) { }
+) {
+}
