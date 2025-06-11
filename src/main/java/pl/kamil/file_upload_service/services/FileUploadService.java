@@ -1,9 +1,5 @@
 package pl.kamil.file_upload_service.services;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,20 +9,26 @@ import pl.kamil.file_upload_service.dtos.FileMetadataResponse;
 import pl.kamil.file_upload_service.dtos.S3FileResponse;
 import pl.kamil.file_upload_service.models.FileMetadata;
 import pl.kamil.file_upload_service.repositories.FileMetadataRepository;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class FileUploadService {
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final FileMetadataRepository fileMetadataRepository;
 
     private final static String bucket = "my-upload-file-bucket-085";
-
-    public FileUploadService(AmazonS3 s3Client, FileMetadataRepository fileMetadataRepository) {
+    public FileUploadService(S3Client s3Client, FileMetadataRepository fileMetadataRepository) {
         this.s3Client = s3Client;
         this.fileMetadataRepository = fileMetadataRepository;
     }
@@ -36,19 +38,23 @@ public class FileUploadService {
         // Prevent filename collisions
         String s3key = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-        // Prepare metadata for the upload
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.addUserMetadata("original-filename", file.getOriginalFilename());
-        metadata.setContentType(file.getContentType());
-        metadata.setContentLength(file.getSize());  // Set the file size in metadata
+        Map<String, String> metadata = new HashMap<>();
+        // metadata will be stored as "x-amz-meta-original-filename"
+        metadata.put("original-filename", file.getOriginalFilename());
 
         try (InputStream inputStream = file.getInputStream()) {
             // Upload the file to the specific S3 bucket
-            PutObjectRequest request = new PutObjectRequest(bucket, s3key, inputStream, metadata);
-            s3Client.putObject(request);
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(s3key)
+                    .contentType(file.getContentType())
+                    .contentLength(file.getSize())
+                    .metadata(metadata)
+                    .build();
 
-            // Return the file URL from S3 bucket
-            //return s3Client.getUrl(bucket, s3key).toString();
+            s3Client.putObject(request, RequestBody.fromInputStream(inputStream, file.getSize()));
+
+
             return s3key;
 
         } catch (AmazonS3Exception e) { // Covers all AWS service errors
@@ -83,24 +89,30 @@ public class FileUploadService {
     }
 
     public S3FileResponse getFileResource(String fileKey) {
-        S3Object s3Object = getFile(fileKey);
-        InputStreamResource resource = new InputStreamResource(s3Object.getObjectContent());
-        String contentType = s3Object.getObjectMetadata().getContentType();
+        ResponseInputStream<GetObjectResponse> s3ObjectStream = getFile(fileKey);
+
+        InputStreamResource resource = new InputStreamResource(s3ObjectStream);
+        String contentType = s3ObjectStream.response().contentType();
 
         return new S3FileResponse(resource, contentType);
     }
 
-    public S3Object getFile(String fileKey) {
+    public ResponseInputStream<GetObjectResponse> getFile(String fileKey) {
         try {
             // Attempt to retrieve the file from S3
-
-            GetObjectRequest getObjectRequest = new GetObjectRequest(bucket, fileKey);
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileKey).
+                    build();
+            
             return s3Client.getObject(getObjectRequest);
 
-        } catch (AmazonServiceException e) {
-            final int statusCode = e.getStatusCode();
+        } catch (NoSuchKeyException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + fileKey);
+        }catch (S3Exception e) {
+            final int statusCode = e.statusCode();
 
-            System.err.println("S3 error [" + statusCode + "]: " + e.getErrorMessage());
+            System.err.println("S3 error [" + statusCode + "]: " + e.getMessage());
 
             switch (statusCode) {
                 case 404 -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + fileKey);
@@ -108,7 +120,7 @@ public class FileUploadService {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to file: " + fileKey, e);
                 // If it's not 404 or 403, treat it as a general S3 storage error
                 default ->
-                        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 error: " + e.getErrorMessage(), e);
+                        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 error: " + e.getMessage(), e);
             }
 
         } catch (SdkClientException e) {
