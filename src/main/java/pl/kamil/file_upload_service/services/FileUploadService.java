@@ -57,8 +57,8 @@ public class FileUploadService {
 
             return s3key;
 
-        } catch (AmazonS3Exception e) { // Covers all AWS service errors
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 service error: " + e.getErrorMessage(), e);
+        } catch (S3Exception e) { // Covers all AWS service errors
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "S3 service error: " + e.getMessage(), e);
         } catch (SdkClientException e) { // Covers network issues and misconfigured clients
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "S3 client/network error: " + e.getMessage(), e);
         } catch (IOException e) { // Handles file read errors
@@ -133,11 +133,16 @@ public class FileUploadService {
 
     public void deleteByKey(String key) {
         try {
-            s3Client.deleteObject(bucket, key);
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build();
 
-        } catch (AmazonServiceException e) {
-            int statusCode = e.getStatusCode();
-            System.err.println("S3 error [" + statusCode + "] while deleting: " + e.getErrorMessage());
+            s3Client.deleteObject(deleteObjectRequest);
+
+        } catch (S3Exception e) {
+            int statusCode = e.statusCode();
+            System.err.println("S3 error [" + statusCode + "] while deleting: " + e.getMessage());
 
             if (statusCode == 403) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to file: " + key, e);
