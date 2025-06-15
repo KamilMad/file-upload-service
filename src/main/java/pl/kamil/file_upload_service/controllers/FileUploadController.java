@@ -42,7 +42,6 @@ public class FileUploadController {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .header(HttpHeaders.CONTENT_TYPE, response.contentType())
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + key + "\"")
                     .body(response.inputStreamResource());
     }
 

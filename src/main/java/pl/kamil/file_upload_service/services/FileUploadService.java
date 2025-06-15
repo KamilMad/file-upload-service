@@ -29,6 +29,7 @@ public class FileUploadService {
         // Prevent filename collisions
         String s3key = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
+
         try (InputStream inputStream = file.getInputStream()) {
             // Upload the file to the specific S3 bucket
             PutObjectRequest request = PutObjectRequest.builder()
