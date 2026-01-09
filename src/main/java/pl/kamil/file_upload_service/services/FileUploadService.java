@@ -22,13 +22,11 @@ public class FileUploadService {
     private final static String bucket = "my-upload-file-bucket-085";
     public FileUploadService(S3Client s3Client) {
         this.s3Client = s3Client;
-
     }
 
     public FileMetadataResponse uploadFile(MultipartFile file) {
         // Prevent filename collisions
         String s3key = UUID.randomUUID() + "-" + file.getOriginalFilename();
-
 
         try (InputStream inputStream = file.getInputStream()) {
             // Upload the file to the specific S3 bucket
@@ -47,11 +45,15 @@ public class FileUploadService {
         }
 
     }
-    public S3FileResponse loadFileContent(String fileKey) {
-        ResponseInputStream<GetObjectResponse> s3ObjectStream = getFile(fileKey);
+
+    public S3FileResponse loadFile(String fileKey) {
+        ResponseInputStream<GetObjectResponse> s3ObjectStream = download(fileKey);
 
         InputStreamResource resource = new InputStreamResource(s3ObjectStream);
-        String contentType = s3ObjectStream.response().contentType();
+
+        String contentType = s3ObjectStream
+                .response()
+                .contentType();
 
         return new S3FileResponse(resource, contentType);
     }
@@ -69,7 +71,7 @@ public class FileUploadService {
         }
     }
 
-    public ResponseInputStream<GetObjectResponse> getFile(String fileKey) {
+    public ResponseInputStream<GetObjectResponse> download(String fileKey) {
         try {
             // Attempt to retrieve the file from S3
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -81,7 +83,6 @@ public class FileUploadService {
         } catch (Exception e) {
             throw ExceptionMapper.mapS3DeleteException(e, fileKey);
         }
-
     }
 
 }
