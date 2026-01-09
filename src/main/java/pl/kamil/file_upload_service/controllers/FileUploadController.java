@@ -1,5 +1,6 @@
 package pl.kamil.file_upload_service.controllers;
 
+import jdk.jfr.ContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -37,18 +38,19 @@ public class FileUploadController {
 
     @GetMapping("/{key}")
     public ResponseEntity<InputStreamResource> getFile(@PathVariable String key) {
-            S3FileResponse response = fileUploadService.loadFileContent(key);
+
+            S3FileResponse response = fileUploadService.loadFile(key);
 
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .header(HttpHeaders.CONTENT_TYPE, response.contentType())
+                    .contentType(MediaType.parseMediaType(response.contentType()))
                     .body(response.inputStreamResource());
     }
 
     @DeleteMapping("/{key}")
     public ResponseEntity<ApiResponse> deleteFile(@PathVariable String key) {
         fileUploadService.deleteByKey(key);
-
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse("File deleted successfully"));
     }
 
